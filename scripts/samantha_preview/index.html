@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Samantha OS1 motion preview</title>
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <main class="workspace">
+      <section class="preview-column" aria-label="Passport display preview">
+        <div class="device" aria-label="240 by 320 Passport display">
+          <canvas id="preview" width="240" height="320"></canvas>
+        </div>
+        <p class="device-caption">240 × 320 Passport preview</p>
+      </section>
+
+      <section class="controls" aria-label="Samantha motion controls">
+        <h1>Samantha motion study</h1>
+        <p class="summary">One OS1 curve, four parameter presets.</p>
+
+        <div class="state-buttons" role="group" aria-label="Motion state">
+          <button type="button" data-state="idle">Idle</button>
+          <button type="button" data-state="listening">Listening</button>
+          <button type="button" data-state="thinking">Thinking</button>
+          <button type="button" data-state="speaking">Speaking</button>
+        </div>
+
+        <p id="state-description" class="state-description" aria-live="polite"></p>
+
+        <div class="tuning-panel">
+          <label>
+            Rotation speed
+            <output for="rotation" id="rotation-value"></output>
+            <input id="rotation" type="range" min="0" max="0.16" step="0.001">
+          </label>
+          <label>
+            Transition progress
+            <output for="progress" id="progress-value"></output>
+            <input id="progress" type="range" min="0" max="1" step="0.01">
+          </label>
+          <label>
+            Transition speed
+            <output for="transition-speed" id="transition-speed-value"></output>
+            <input id="transition-speed" type="range" min="0.1" max="1.2" step="0.05">
+          </label>
+          <label>
+            Ring motion / wobble
+            <output for="ring-motion" id="ring-motion-value"></output>
+            <input id="ring-motion" type="range" min="0" max="0.2" step="0.005">
+          </label>
+        </div>
+
+        <p class="hint">Choose a state to animate toward its target, or drag Transition progress to inspect the full helix-to-ring path.</p>
+      </section>
+    </main>
+
+    <script type="module" src="./preview.js"></script>
+  </body>
+</html>

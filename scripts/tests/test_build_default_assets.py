@@ -15,6 +15,76 @@ SPEC.loader.exec_module(BUILD)
 
 
 class BuildDefaultAssetsTest(unittest.TestCase):
+    def test_explicit_emoji_collection_path_takes_precedence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            explicit = root / "explicit"
+            fallback = root / "noto" / "png" / "fallback"
+            explicit.mkdir()
+            fallback.mkdir(parents=True)
+            (explicit / "idle.gif").write_bytes(b"GIF89a")
+            (fallback / "default.png").write_bytes(b"png")
+
+            self.assertEqual(
+                BUILD.resolve_emoji_collection_path(
+                    str(explicit), "fallback", str(root / "noto")
+                ),
+                str(explicit),
+            )
+
+    def test_empty_explicit_emoji_collection_falls_back_to_named_collection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            explicit = root / "explicit"
+            fallback = root / "noto" / "png" / "fallback"
+            explicit.mkdir()
+            fallback.mkdir(parents=True)
+            (explicit / "README.md").write_text("No artwork yet", encoding="utf-8")
+            (fallback / "default.png").write_bytes(b"png")
+
+            self.assertEqual(
+                BUILD.resolve_emoji_collection_path(
+                    str(explicit), "fallback", str(root / "noto")
+                ),
+                str(fallback),
+            )
+
+    def test_named_emoji_collection_is_used_without_explicit_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fallback = root / "noto" / "png" / "fallback"
+            fallback.mkdir(parents=True)
+            (fallback / "default.png").write_bytes(b"png")
+
+            self.assertEqual(
+                BUILD.resolve_emoji_collection_path(
+                    None, "fallback", str(root / "noto")
+                ),
+                str(fallback),
+            )
+
+    def test_samantha_gifs_are_written_to_the_assets_index(self):
+        with tempfile.TemporaryDirectory() as directory:
+            assets = Path(directory) / "assets"
+            assets.mkdir()
+
+            emoji_collection = BUILD.process_emoji_collection(
+                str(ROOT / "assets" / "samantha"), str(assets)
+            )
+            BUILD.generate_index_json(str(assets), None, None, emoji_collection)
+            index = json.loads((assets / "index.json").read_text(encoding="utf-8"))
+
+            self.assertEqual(
+                {item["name"] for item in index["emoji_collection"]},
+                {"idle", "listening", "thinking", "speaking"},
+            )
+            self.assertEqual(
+                {item["file"] for item in index["emoji_collection"]},
+                {"idle.gif", "listening.gif", "thinking.gif", "speaking.gif"},
+            )
+            for item in index["emoji_collection"]:
+                self.assertTrue((assets / item["file"]).is_file())
+
     def test_text_font_metadata_uses_bundle_charset_size_and_bpp(self):
         with tempfile.TemporaryDirectory() as directory:
             assets = Path(directory)

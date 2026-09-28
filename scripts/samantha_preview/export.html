@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Samantha GIF exporter</title>
+    <style>
+      :root { color: #22201d; background: #f2eee7; font: 16px/1.5 system-ui, sans-serif; }
+      body { margin: 0; padding: 48px 24px; }
+      main { width: min(100%, 620px); margin: auto; }
+      h1 { margin: 0 0 10px; font: 500 30px/1.2 Georgia, serif; }
+      p { color: #625b53; }
+      button { padding: 12px 18px; border: 0; border-radius: 4px; background: #d1684e; color: #fff; font: 600 15px system-ui, sans-serif; cursor: pointer; }
+      button:disabled { opacity: .6; cursor: wait; }
+      #status { min-height: 28px; margin: 20px 0 8px; color: #22201d; }
+      #results { padding-left: 22px; color: #625b53; }
+      #previews { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+      figure { margin: 0; }
+      figure img { display: block; max-width: min(100%, 240px); max-height: 320px; background: #d1684e; }
+      figcaption { margin-top: 6px; color: #625b53; font: 12px/1.4 ui-monospace, monospace; }
+      #render-surface { position: fixed; left: -10000px; top: 0; }
+      #render-surface canvas { display: block; }
+      .hidden-controls { display: none; }
+    </style>
+    <script>window.__SAMANTHA_EXPORT_MODE__ = true;</script>
+    <script type="module" src="./export.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Deterministic Samantha GIF export</h1>
+      <p>Renders the approved OS1 prototype at explicit 20 FPS output using a fixed 60 FPS simulation clock. The files contain only the Passport display canvas.</p>
+      <button id="export-all" type="button">Export all GIFs</button>
+      <p id="status" role="status" aria-live="polite">Ready. Export writes only the four firmware candidates and the README showcase.</p>
+      <ol id="results"></ol>
+      <section id="previews" aria-label="Exported GIF previews"></section>
+    </main>
+    <div id="render-surface" aria-hidden="true">
+      <canvas id="preview" width="128" height="128"></canvas>
+      <p id="state-description"></p>
+      <label>Rotation <input id="rotation" type="range"><output id="rotation-value"></output></label>
+      <label>Progress <input id="progress" type="range"><output id="progress-value"></output></label>
+      <label>Transition speed <input id="transition-speed" type="range"><output id="transition-speed-value"></output></label>
+      <label>Ring motion <input id="ring-motion" type="range"><output id="ring-motion-value"></output></label>
+      <button data-state="idle" type="button">Idle</button>
+      <button data-state="listening" type="button">Listening</button>
+      <button data-state="thinking" type="button">Thinking</button>
+      <button data-state="speaking" type="button">Speaking</button>
+    </div>
+  </body>
+</html>
