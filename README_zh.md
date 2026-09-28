@@ -35,6 +35,12 @@
 - 通过云端 MCP 扩展大模型能力（智能家居控制、PC桌面操作、知识搜索、邮件收发等）
 - 自定义唤醒词、字体、表情与聊天背景，支持网页端在线修改 ([自定义Assets生成器](https://github.com/78/xiaozhi-assets-generator))
 
+## Samantha UI 展示
+
+![Samantha UI 演示](docs/samantha-ui-demo.gif)
+
+此界面为 FoloToy AI Passport 实现，灵感来自电影《Her》中 OS1/Samantha 的视觉语言；这是独立实现，并非电影官方 UI 代码。助手回复字幕将使用 XiaoZhi 现有的 TTS 句子文本路径。
+
 ## 硬件
 
 ### 面包板手工制作实践

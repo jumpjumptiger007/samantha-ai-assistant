@@ -80,6 +80,7 @@ if(CONFIG_BOARD_TYPE_FOLOTOY_AI_PASSPORT)
     set(BUILTIN_TEXT_FONT font_noto_sans_basic_20_4)
     set(BUILTIN_ICON_FONT font_material_symbols_20_4)
     set(DEFAULT_EMOJI_COLLECTION noto-color-emoji_32)
+    set(DEFAULT_EMOJI_COLLECTION_PATH "${PROJECT_DIR}/assets/samantha")
 endif()
 if(NOT BOARD_DIR AND NOT CMAKE_BUILD_EARLY_EXPANSION)
     message(FATAL_ERROR "The selected board does not define BOARD_DIR")
@@ -526,6 +527,19 @@ function(build_default_assets_bin)
         list(APPEND DEFAULT_ASSETS_DEPENDENCIES ${DEFAULT_EMOJI_FILES})
     endif()
 
+    # A board may provide a project-local collection. The asset builder uses it
+    # only when it has usable PNG/GIF files, otherwise DEFAULT_EMOJI_COLLECTION
+    # remains the fallback.
+    if(DEFAULT_EMOJI_COLLECTION_PATH)
+        list(APPEND BUILD_ARGS "--emoji_collection_path" "${DEFAULT_EMOJI_COLLECTION_PATH}")
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+            "${DEFAULT_EMOJI_COLLECTION_PATH}")
+        file(GLOB_RECURSE LOCAL_EMOJI_FILES CONFIGURE_DEPENDS
+            "${DEFAULT_EMOJI_COLLECTION_PATH}/*"
+        )
+        list(APPEND DEFAULT_ASSETS_DEPENDENCIES ${LOCAL_EMOJI_FILES})
+    endif()
+
     # Add default assets extra files if defined
     if(DEFAULT_ASSETS_EXTRA_FILES)
         list(APPEND BUILD_ARGS "--extra_files" "${DEFAULT_ASSETS_EXTRA_FILES}")
@@ -649,5 +663,4 @@ if ("${size}" AND "${offset}")
 else()
     message(STATUS "Assets partition not found, using v1 partition table")
 endif()
-
 

@@ -37,6 +37,12 @@ As a voice interaction entry, the XiaoZhi AI chatbot leverages the AI capabiliti
 - Cloud-side MCP to extend large model capabilities (smart home control, PC desktop operation, knowledge search, email, etc.)
 - Customizable wake words, fonts, emojis, and chat backgrounds with online web-based editing ([Custom Assets Generator](https://github.com/78/xiaozhi-assets-generator))
 
+## Samantha UI Showcase
+
+![Samantha UI demo](docs/samantha-ui-demo.gif)
+
+This FoloToy AI Passport interface is inspired by the OS1/Samantha visual language in *Her*. It is an independent implementation, not official movie UI code. Assistant response subtitles will use XiaoZhi's existing TTS sentence text path.
+
 ## Hardware
 
 ### Breadboard DIY Practice

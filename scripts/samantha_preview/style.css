@@ -1,0 +1,154 @@
+:root {
+  color: #22201d;
+  background: #f2eee7;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: auto minmax(260px, 360px);
+  gap: 48px;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 36px;
+}
+
+.preview-column {
+  text-align: center;
+}
+
+.device {
+  width: 240px;
+  height: 320px;
+  overflow: hidden;
+  background: #d1684e;
+  box-shadow: 0 16px 38px rgb(43 29 22 / 22%);
+}
+
+canvas {
+  display: block;
+  width: 240px;
+  height: 320px;
+}
+
+.device-caption {
+  margin: 12px 0 0;
+  color: #625b53;
+  font: 12px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.controls {
+  max-width: 360px;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 38px);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.summary,
+.state-description,
+.hint {
+  color: #625b53;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.summary {
+  margin: 8px 0 22px;
+}
+
+.state-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+}
+
+button {
+  min-height: 37px;
+  border: 1px solid #bdb4a8;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: 600 14px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+button:hover,
+button:focus-visible {
+  border-color: #d1684e;
+  outline: 2px solid transparent;
+}
+
+button[aria-pressed="true"] {
+  border-color: #d1684e;
+  background: #d1684e;
+  color: #fff;
+}
+
+.state-description {
+  min-height: 44px;
+  margin: 15px 0;
+}
+
+.tuning-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #d6cfc4;
+  background: #f8f5ef;
+}
+
+label {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 12px;
+  align-items: center;
+  font: 600 13px/1.2 system-ui, sans-serif;
+}
+
+output {
+  color: #625b53;
+  font: 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+input {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: #d1684e;
+}
+
+.hint {
+  margin: 15px 0 0;
+  font-size: 12px;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+
+@media (max-width: 700px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    justify-items: center;
+    padding: 28px 20px;
+  }
+
+  .controls {
+    width: min(100%, 360px);
+  }
+}

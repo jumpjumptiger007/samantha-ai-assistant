@@ -6,6 +6,7 @@
 #include "config.h"
 #include "assets/lang_config.h"
 #include "cw2017_battery_monitor.h"
+#include "display/lvgl_display/lvgl_theme.h"
 
 #include <esp_log.h>
 #include <esp_lcd_panel_vendor.h>
@@ -15,6 +16,7 @@
 #include <driver/spi_common.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <cstring>
 
 #define TAG "AiPassport"
 
@@ -24,6 +26,168 @@ enum {
     kAdcButtonDown,
     kAdcButtonOk,
     kAdcButtonNum,
+};
+
+class SamanthaPassportDisplay final : public SpiLcdDisplay {
+public:
+    SamanthaPassportDisplay(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_handle_t panel,
+                            int width, int height, int offset_x, int offset_y, bool mirror_x,
+                            bool mirror_y, bool swap_xy)
+        : SpiLcdDisplay(panel_io, panel, width, height, offset_x, offset_y, mirror_x, mirror_y,
+                        swap_xy) {
+        ApplySamanthaPalette(GetTheme());
+    }
+
+    void SetupUI() override {
+        SpiLcdDisplay::SetupUI();
+
+        DisplayLockGuard lock(this);
+        const lv_color_t coral = lv_color_hex(0xD1684E);
+        const lv_color_t white = lv_color_hex(0xFFFFFF);
+        lv_obj_t* screen = lv_screen_active();
+        if (screen != nullptr) {
+            lv_obj_set_style_bg_color(screen, coral, 0);
+            lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
+        }
+        if (container_ != nullptr) {
+            lv_obj_set_style_bg_color(container_, coral, 0);
+            lv_obj_set_style_bg_opa(container_, LV_OPA_COVER, 0);
+        }
+        if (content_ != nullptr) {
+            lv_obj_set_style_bg_color(content_, coral, 0);
+            lv_obj_set_style_bg_opa(content_, LV_OPA_TRANSP, 0);
+        }
+        if (top_bar_ != nullptr) {
+            lv_obj_set_style_bg_opa(top_bar_, LV_OPA_TRANSP, 0);
+        }
+        if (status_bar_ != nullptr) {
+            lv_obj_set_style_bg_opa(status_bar_, LV_OPA_TRANSP, 0);
+        }
+        if (status_label_ != nullptr) {
+            lv_obj_set_style_text_color(status_label_, white, 0);
+        }
+        if (notification_label_ != nullptr) {
+            lv_obj_set_style_text_color(notification_label_, white, 0);
+        }
+        if (emoji_box_ != nullptr) {
+            lv_obj_set_size(emoji_box_, 128, 128);
+            lv_obj_align(emoji_box_, LV_ALIGN_CENTER, 0, 0);
+        }
+        if (bottom_bar_ != nullptr) {
+            lv_obj_set_style_bg_color(bottom_bar_, coral, 0);
+            lv_obj_set_style_bg_opa(bottom_bar_, LV_OPA_TRANSP, 0);
+            lv_obj_set_style_border_width(bottom_bar_, 0, 0);
+            lv_obj_set_style_pad_all(bottom_bar_, 0, 0);
+        }
+        if (chat_message_label_ != nullptr) {
+            lv_obj_set_style_text_color(chat_message_label_, white, 0);
+            lv_obj_set_style_text_align(chat_message_label_, LV_TEXT_ALIGN_CENTER, 0);
+        }
+    }
+
+    void SetStatus(const char* status) override {
+        const char* emotion = nullptr;
+        if (status != nullptr && std::strcmp(status, Lang::Strings::STANDBY) == 0) {
+            emotion = "idle";
+        } else if (status != nullptr && std::strcmp(status, Lang::Strings::LISTENING) == 0) {
+            emotion = "listening";
+        } else if (status != nullptr && std::strcmp(status, Lang::Strings::SPEAKING) == 0) {
+            emotion = "speaking";
+        }
+
+        if (emotion == nullptr) {
+            SpiLcdDisplay::SetStatus(status);
+            return;
+        }
+
+        // Keep operational/provisioning statuses visible, but let the animation
+        // communicate the three normal conversation states without a status label.
+        SpiLcdDisplay::SetStatus("");
+        if (status_label_ != nullptr) {
+            DisplayLockGuard lock(this);
+            lv_obj_add_flag(status_label_, LV_OBJ_FLAG_HIDDEN);
+        }
+        SetEmotion(emotion);
+    }
+
+    void SetEmotion(const char* emotion) override {
+        if (emotion == nullptr) {
+            return;
+        }
+
+        // Keep the central display board-owned. Normal server emotions (happy,
+        // neutral, etc.) must not replace Samantha's current animation.
+        if (std::strcmp(emotion, "robot_2") == 0) {
+            SpiLcdDisplay::SetEmotion("idle");
+        } else if (std::strcmp(emotion, "idle") == 0 || std::strcmp(emotion, "listening") == 0 ||
+                   std::strcmp(emotion, "thinking") == 0 || std::strcmp(emotion, "speaking") == 0) {
+            SpiLcdDisplay::SetEmotion(emotion);
+        }
+    }
+
+    void SetChatMessage(const char* role, const char* content) override {
+        const char* safe_role = role != nullptr ? role : "system";
+        if (std::strcmp(safe_role, "user") == 0) {
+            // STT text is a visual state trigger only; do not render the transcript.
+            SpiLcdDisplay::ClearChatMessages();
+            SetEmotion("thinking");
+            return;
+        }
+
+        SpiLcdDisplay::SetChatMessage(safe_role, content != nullptr ? content : "");
+        if (std::strcmp(safe_role, "assistant") != 0) {
+            return;
+        }
+
+        DisplayLockGuard lock(this);
+        if (bottom_bar_ != nullptr) {
+            lv_obj_set_style_bg_color(bottom_bar_, lv_color_hex(0xD1684E), 0);
+            lv_obj_set_style_bg_opa(bottom_bar_, LV_OPA_TRANSP, 0);
+            lv_obj_set_style_border_width(bottom_bar_, 0, 0);
+            lv_obj_set_style_pad_all(bottom_bar_, 0, 0);
+        }
+        if (chat_message_label_ != nullptr) {
+            lv_obj_set_style_text_color(chat_message_label_, lv_color_hex(0xFFFFFF), 0);
+            lv_obj_set_style_text_align(chat_message_label_, LV_TEXT_ALIGN_CENTER, 0);
+        }
+    }
+
+    void SetHideSubtitle(bool hide) override {
+        (void)hide;
+        // Samantha's assistant sentence is the conversation UI, so keep it visible.
+        SpiLcdDisplay::SetHideSubtitle(false);
+    }
+
+    void SetTheme(Theme* theme) override {
+        if (theme == nullptr) {
+            return;
+        }
+        ApplySamanthaPalette(theme);
+        if (IsSetupUICalled()) {
+            SpiLcdDisplay::SetTheme(theme);
+        } else {
+            Display::SetTheme(theme);
+        }
+    }
+
+private:
+    static void ApplySamanthaPalette(Theme* theme) {
+        if (theme == nullptr) {
+            return;
+        }
+        auto* lvgl_theme = static_cast<LvglTheme*>(theme);
+        const lv_color_t coral = lv_color_hex(0xD1684E);
+        const lv_color_t white = lv_color_hex(0xFFFFFF);
+        lvgl_theme->set_background_color(coral);
+        lvgl_theme->set_chat_background_color(coral);
+        lvgl_theme->set_user_bubble_color(coral);
+        lvgl_theme->set_assistant_bubble_color(coral);
+        lvgl_theme->set_system_bubble_color(coral);
+        lvgl_theme->set_system_text_color(white);
+        lvgl_theme->set_text_color(white);
+        lvgl_theme->set_border_color(coral);
+        lvgl_theme->set_background_image(nullptr);
+    }
 };
 
 class AiPassportBoard : public WifiBoard {
@@ -210,10 +374,9 @@ private:
         esp_lcd_panel_mirror(panel, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y);
         esp_lcd_panel_disp_on_off(panel, true);
 
-        display_ = new SpiLcdDisplay(panel_io, panel,
-                                     DISPLAY_WIDTH, DISPLAY_HEIGHT,
-                                     DISPLAY_OFFSET_X, DISPLAY_OFFSET_Y,
-                                     DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y, DISPLAY_SWAP_XY);
+        display_ = new SamanthaPassportDisplay(panel_io, panel, DISPLAY_WIDTH, DISPLAY_HEIGHT,
+                                               DISPLAY_OFFSET_X, DISPLAY_OFFSET_Y, DISPLAY_MIRROR_X,
+                                               DISPLAY_MIRROR_Y, DISPLAY_SWAP_XY);
     }
 
 public:
