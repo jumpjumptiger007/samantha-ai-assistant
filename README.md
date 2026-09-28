@@ -41,7 +41,9 @@ As a voice interaction entry, the XiaoZhi AI chatbot leverages the AI capabiliti
 
 ![Samantha UI demo](docs/samantha-ui-demo.gif)
 
-This FoloToy AI Passport interface is inspired by the OS1/Samantha visual language in *Her*. It is an independent implementation, not official movie UI code. Assistant response subtitles will use XiaoZhi's existing TTS sentence text path.
+This is an independent Samantha / OS1-inspired interface for FoloToy AI Passport, not official movie UI code. The board-local integration provides Idle, Listening, STT-triggered Thinking, and Speaking animations. Assistant sentence subtitles reuse XiaoZhi's existing TTS sentence text path; user speech transcripts are intentionally not displayed.
+
+The firmware GIFs are optimized for the ESP32-C3 and its 240×320 ST7789 display. The canonical firmware build passes with ESP-IDF 6.1; physical hardware playback and runtime behavior have not yet been validated.
 
 ## Hardware
 

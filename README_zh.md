@@ -39,7 +39,9 @@
 
 ![Samantha UI 演示](docs/samantha-ui-demo.gif)
 
-此界面为 FoloToy AI Passport 实现，灵感来自电影《Her》中 OS1/Samantha 的视觉语言；这是独立实现，并非电影官方 UI 代码。助手回复字幕将使用 XiaoZhi 现有的 TTS 句子文本路径。
+这是为 FoloToy AI Passport 独立实现的 Samantha / OS1 风格界面，灵感来自电影《Her》，并非电影官方 UI 代码。界面集成在 AI Passport 板级实现中，包含待机、聆听、由 STT 触发的思考，以及说话动画。助手回复字幕复用 XiaoZhi 现有的 TTS 句子文本通路；用户语音转写内容则不会显示。
+
+固件 GIF 已针对 ESP32-C3 和 240×320 的 ST7789 屏幕进行优化。软件构建已通过 ESP-IDF 6.1 验证；真机播放、内存占用和实际交互效果仍等待硬件验证。
 
 ## 硬件
 
