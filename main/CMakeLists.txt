@@ -81,6 +81,12 @@ if(CONFIG_BOARD_TYPE_FOLOTOY_AI_PASSPORT)
     set(BUILTIN_ICON_FONT font_material_symbols_20_4)
     set(DEFAULT_EMOJI_COLLECTION noto-color-emoji_32)
     set(DEFAULT_EMOJI_COLLECTION_PATH "${PROJECT_DIR}/assets/samantha")
+    list(APPEND SAMANTHA_GIF_EMBED_FILES
+        "${PROJECT_DIR}/assets/samantha/idle.gif"
+        "${PROJECT_DIR}/assets/samantha/listening.gif"
+        "${PROJECT_DIR}/assets/samantha/thinking.gif"
+        "${PROJECT_DIR}/assets/samantha/speaking.gif"
+    )
 endif()
 if(NOT BOARD_DIR AND NOT CMAKE_BUILD_EARLY_EXPANSION)
     message(FATAL_ERROR "The selected board does not define BOARD_DIR")
@@ -303,7 +309,7 @@ if(CONFIG_BOARD_TYPE_ESP32_P4_FUNCTION_EV_BOARD)
     )
 endif()
 idf_component_register(SRCS ${SOURCES}
-                    EMBED_FILES ${LANG_SOUNDS} ${COMMON_SOUNDS}
+                    EMBED_FILES ${LANG_SOUNDS} ${COMMON_SOUNDS} ${SAMANTHA_GIF_EMBED_FILES}
                     INCLUDE_DIRS ${INCLUDE_DIRS}
                     WHOLE_ARCHIVE
                     PRIV_REQUIRES

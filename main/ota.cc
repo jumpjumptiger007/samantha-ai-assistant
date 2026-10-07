@@ -1,7 +1,10 @@
 #include "ota.h"
-#include "system_info.h"
-#include "settings.h"
+#if CONFIG_BOARD_TYPE_FOLOTOY_AI_PASSPORT
+#include "boards/folotoy/ai-passport/launcher_compat.h"
+#endif
 #include "assets/lang_config.h"
+#include "settings.h"
+#include "system_info.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -248,6 +251,13 @@ NetworkResult<> Ota::CheckVersion() {
 }
 
 void Ota::MarkCurrentVersionValid() {
+#if CONFIG_BOARD_TYPE_FOLOTOY_AI_PASSPORT
+    if (launcher_compat::IsLauncherChildMode()) {
+        ESP_LOGI(TAG, "Launcher child mode: preserving trial boot state");
+        return;
+    }
+#endif
+
     auto partition = esp_ota_get_running_partition();
     if (strcmp(partition->label, "factory") == 0) {
         ESP_LOGI(TAG, "Running from factory partition, skipping");
@@ -267,7 +277,15 @@ void Ota::MarkCurrentVersionValid() {
     }
 }
 
-bool Ota::Upgrade(const std::string& firmware_url, std::function<void(int progress, size_t speed)> callback) {
+bool Ota::Upgrade(const std::string& firmware_url,
+                  std::function<void(int progress, size_t speed)> callback) {
+#if CONFIG_BOARD_TYPE_FOLOTOY_AI_PASSPORT
+    if (launcher_compat::IsLauncherChildMode()) {
+        ESP_LOGW(TAG, "Launcher child mode: firmware self-upgrade is disabled");
+        return false;
+    }
+#endif
+
     ESP_LOGI(TAG, "Upgrading firmware from %s", firmware_url.c_str());
     esp_ota_handle_t update_handle = 0;
     auto update_partition = esp_ota_get_next_update_partition(NULL);

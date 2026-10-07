@@ -1,22 +1,38 @@
-#include "wifi_board.h"
-#include "display/lcd_display.h"
-#include "codecs/es8311_audio_codec.h"
 #include "application.h"
-#include "button.h"
-#include "config.h"
 #include "assets/lang_config.h"
+#include "boards/folotoy/ai-passport/launcher_compat.h"
+#include "button.h"
+#include "codecs/es8311_audio_codec.h"
+#include "config.h"
 #include "cw2017_battery_monitor.h"
+#include "display/lcd_display.h"
+#include "display/lvgl_display/emoji_collection.h"
+#include "display/lvgl_display/lvgl_image.h"
 #include "display/lvgl_display/lvgl_theme.h"
+#include "wifi_board.h"
 
-#include <esp_log.h>
-#include <esp_lcd_panel_vendor.h>
-#include <button_adc.h>
-#include <esp_adc/adc_oneshot.h>
 #include <driver/i2c_master.h>
 #include <driver/spi_common.h>
+#include <esp_adc/adc_oneshot.h>
+#include <esp_lcd_panel_vendor.h>
+#include <esp_log.h>
+#include <button_adc.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <cstdint>
 #include <cstring>
+#include <memory>
+
+extern "C" {
+extern const uint8_t _binary_idle_gif_start[];
+extern const uint8_t _binary_idle_gif_end[];
+extern const uint8_t _binary_listening_gif_start[];
+extern const uint8_t _binary_listening_gif_end[];
+extern const uint8_t _binary_thinking_gif_start[];
+extern const uint8_t _binary_thinking_gif_end[];
+extern const uint8_t _binary_speaking_gif_start[];
+extern const uint8_t _binary_speaking_gif_end[];
+}
 
 #define TAG "AiPassport"
 
@@ -35,6 +51,12 @@ public:
                             bool mirror_y, bool swap_xy)
         : SpiLcdDisplay(panel_io, panel, width, height, offset_x, offset_y, mirror_x, mirror_y,
                         swap_xy) {
+        launcher_child_mode_ = launcher_compat::IsLauncherChildMode();
+        if (launcher_child_mode_) {
+            CreateEmbeddedEmojiCollection();
+            ApplyEmbeddedEmojiCollection(LvglThemeManager::GetInstance().GetTheme("light"));
+            ApplyEmbeddedEmojiCollection(LvglThemeManager::GetInstance().GetTheme("dark"));
+        }
         ApplySamanthaPalette(GetTheme());
     }
 
@@ -162,6 +184,7 @@ public:
         if (theme == nullptr) {
             return;
         }
+        ApplyEmbeddedEmojiCollection(theme);
         ApplySamanthaPalette(theme);
         if (IsSetupUICalled()) {
             SpiLcdDisplay::SetTheme(theme);
@@ -171,6 +194,32 @@ public:
     }
 
 private:
+    bool launcher_child_mode_ = false;
+    std::shared_ptr<EmojiCollection> embedded_emoji_collection_;
+
+    void CreateEmbeddedEmojiCollection() {
+        embedded_emoji_collection_ = std::make_shared<EmojiCollection>();
+        embedded_emoji_collection_->AddEmoji(
+            "idle", new LvglRawImage(const_cast<uint8_t*>(_binary_idle_gif_start),
+                                     _binary_idle_gif_end - _binary_idle_gif_start));
+        embedded_emoji_collection_->AddEmoji(
+            "listening", new LvglRawImage(const_cast<uint8_t*>(_binary_listening_gif_start),
+                                          _binary_listening_gif_end - _binary_listening_gif_start));
+        embedded_emoji_collection_->AddEmoji(
+            "thinking", new LvglRawImage(const_cast<uint8_t*>(_binary_thinking_gif_start),
+                                         _binary_thinking_gif_end - _binary_thinking_gif_start));
+        embedded_emoji_collection_->AddEmoji(
+            "speaking", new LvglRawImage(const_cast<uint8_t*>(_binary_speaking_gif_start),
+                                         _binary_speaking_gif_end - _binary_speaking_gif_start));
+        ESP_LOGI(TAG, "Launcher child mode: using four embedded Samantha GIFs");
+    }
+
+    void ApplyEmbeddedEmojiCollection(Theme* theme) const {
+        if (launcher_child_mode_ && embedded_emoji_collection_ != nullptr && theme != nullptr) {
+            static_cast<LvglTheme*>(theme)->set_emoji_collection(embedded_emoji_collection_);
+        }
+    }
+
     static void ApplySamanthaPalette(Theme* theme) {
         if (theme == nullptr) {
             return;
