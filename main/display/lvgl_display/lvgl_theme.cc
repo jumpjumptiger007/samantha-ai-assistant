@@ -4,7 +4,7 @@ LvglTheme::LvglTheme(const std::string& name) : Theme(name) {
 }
 
 lv_color_t LvglTheme::ParseColor(const std::string& color) {
-    if (color.find("#") == 0) {
+    if (color.size() >= 7 && color[0] == '#') {
         // Convert #112233 to lv_color_t
         uint8_t r = strtol(color.substr(1, 2).c_str(), nullptr, 16);
         uint8_t g = strtol(color.substr(3, 2).c_str(), nullptr, 16);
