@@ -1,4 +1,5 @@
 #include "websocket_protocol.h"
+#include "server_hello_transport.h"
 #include "application.h"
 #include "board.h"
 #include "settings.h"
@@ -224,7 +225,12 @@ std::string WebsocketProtocol::GetHelloMessage() {
 
 void WebsocketProtocol::ParseServerHello(const cJSON* root) {
     auto transport = cJSON_GetObjectItem(root, "transport");
-    if (transport == nullptr || strcmp(transport->valuestring, "websocket") != 0) {
+    const auto transport_status = server_hello::ClassifyTransport(transport);
+    if (transport_status == server_hello::Transport::kMissingOrNonString) {
+        ESP_LOGE(TAG, "Missing or non-string transport in server hello");
+        return;
+    }
+    if (transport_status == server_hello::Transport::kUnsupported) {
         ESP_LOGE(TAG, "Unsupported transport: %s", transport->valuestring);
         return;
     }

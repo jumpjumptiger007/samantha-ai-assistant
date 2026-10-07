@@ -3,6 +3,8 @@
 #include "sdkconfig.h"
 
 #if CONFIG_USE_AUDIO_DEBUGGER
+#include "utils/input_parsing.h"
+
 #include <arpa/inet.h>
 #include <cstring>
 #include <errno.h>
@@ -22,14 +24,20 @@ AudioDebugger::AudioDebugger() {
 
         if (colon_pos != std::string::npos) {
             std::string ip = server_addr.substr(0, colon_pos);
-            int port = std::stoi(server_addr.substr(colon_pos + 1));
+            uint16_t port = 0;
+            if (input_parsing::ParsePort(server_addr.substr(colon_pos + 1), port)) {
+                memset(&udp_server_addr_, 0, sizeof(udp_server_addr_));
+                udp_server_addr_.sin_family = AF_INET;
+                udp_server_addr_.sin_port = htons(port);
+                inet_pton(AF_INET, ip.c_str(), &udp_server_addr_.sin_addr);
 
-            memset(&udp_server_addr_, 0, sizeof(udp_server_addr_));
-            udp_server_addr_.sin_family = AF_INET;
-            udp_server_addr_.sin_port = htons(port);
-            inet_pton(AF_INET, ip.c_str(), &udp_server_addr_.sin_addr);
-
-            ESP_LOGI(TAG, "Initialized server address: %s", CONFIG_AUDIO_DEBUG_UDP_SERVER);
+                ESP_LOGI(TAG, "Initialized server address: %s", CONFIG_AUDIO_DEBUG_UDP_SERVER);
+            } else {
+                ESP_LOGW(TAG, "Invalid server address: %s, should be IP:PORT",
+                         CONFIG_AUDIO_DEBUG_UDP_SERVER);
+                close(udp_sockfd_);
+                udp_sockfd_ = -1;
+            }
         } else {
             ESP_LOGW(TAG, "Invalid server address: %s, should be IP:PORT", CONFIG_AUDIO_DEBUG_UDP_SERVER);
             close(udp_sockfd_);

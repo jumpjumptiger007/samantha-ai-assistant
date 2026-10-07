@@ -5,6 +5,7 @@
 #include "assets/lang_config.h"
 #include "settings.h"
 #include "system_info.h"
+#include "utils/input_parsing.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -21,9 +22,6 @@
 #endif
 
 #include <cstring>
-#include <vector>
-#include <sstream>
-#include <algorithm>
 
 #define TAG "Ota"
 
@@ -229,17 +227,35 @@ NetworkResult<> Ota::CheckVersion() {
         }
 
         if (cJSON_IsString(version) && cJSON_IsString(url)) {
-            // Check if the version is newer, for example, 0.1.0 is newer than 0.0.1
-            has_new_version_ = IsNewVersionAvailable(current_version_, firmware_version_);
-            if (has_new_version_) {
-                ESP_LOGI(TAG, "New version available: %s", firmware_version_.c_str());
+            const auto version_comparison =
+                input_parsing::CompareVersions(current_version_, firmware_version_);
+            const bool versions_are_valid =
+                version_comparison != input_parsing::VersionComparison::kInvalidCurrent &&
+                version_comparison != input_parsing::VersionComparison::kInvalidNew;
+
+            if (!versions_are_valid) {
+                has_new_version_ = false;
+                if (version_comparison == input_parsing::VersionComparison::kInvalidCurrent) {
+                    ESP_LOGW(TAG, "Cannot parse current firmware version: %s",
+                             current_version_.c_str());
+                } else {
+                    ESP_LOGW(TAG, "Ignoring malformed server firmware version: %s",
+                             firmware_version_.c_str());
+                }
             } else {
-                ESP_LOGI(TAG, "Current is the latest version");
-            }
-            // If the force flag is set to 1, the given version is forced to be installed
-            cJSON *force = cJSON_GetObjectItem(firmware, "force");
-            if (cJSON_IsNumber(force) && force->valueint == 1) {
-                has_new_version_ = true;
+                // Check if the version is newer, for example, 0.1.0 is newer than 0.0.1
+                has_new_version_ =
+                    version_comparison == input_parsing::VersionComparison::kNewer;
+                if (has_new_version_) {
+                    ESP_LOGI(TAG, "New version available: %s", firmware_version_.c_str());
+                } else {
+                    ESP_LOGI(TAG, "Current is the latest version");
+                }
+                // Preserve forced updates only when both versions are parseable.
+                cJSON *force = cJSON_GetObjectItem(firmware, "force");
+                if (cJSON_IsNumber(force) && force->valueint == 1) {
+                    has_new_version_ = true;
+                }
             }
         }
     } else {
@@ -417,33 +433,6 @@ bool Ota::StartUpgrade(std::function<void(int progress, size_t speed)> callback)
     return Upgrade(firmware_url_, callback);
 }
 
-
-std::vector<int> Ota::ParseVersion(const std::string& version) {
-    std::vector<int> versionNumbers;
-    std::stringstream ss(version);
-    std::string segment;
-    
-    while (std::getline(ss, segment, '.')) {
-        versionNumbers.push_back(std::stoi(segment));
-    }
-    
-    return versionNumbers;
-}
-
-bool Ota::IsNewVersionAvailable(const std::string& currentVersion, const std::string& newVersion) {
-    std::vector<int> current = ParseVersion(currentVersion);
-    std::vector<int> newer = ParseVersion(newVersion);
-    
-    for (size_t i = 0; i < std::min(current.size(), newer.size()); ++i) {
-        if (newer[i] > current[i]) {
-            return true;
-        } else if (newer[i] < current[i]) {
-            return false;
-        }
-    }
-    
-    return newer.size() > current.size();
-}
 
 std::string Ota::GetActivationPayload() {
     if (!has_serial_number_) {
